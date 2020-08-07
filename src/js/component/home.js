@@ -5,7 +5,7 @@ export class Home extends React.Component {
 	constructor() {
 		super();
 		this.state = {
-			current: 0,
+			currentIndex: 0,
 			songs: []
 		};
 		this.player = React.createRef();
@@ -14,51 +14,88 @@ export class Home extends React.Component {
 	componentDidMount() {
 		fetch("https://assets.breatheco.de/apis/sound/songs")
 			.then(songs => songs.json())
-			.then(data => this.setState({ songs: data }));
+			.then(data => this.setState({ songs: data }))
+			.catch(error => console.log("Error"));
 	}
 
-	playFunction = i => {
-		this.setState({ current: i });
-		this.player.current.src = "files/cartoons/songs/flintstones.mp3";
+	playFunction = () => {
+		var endpoint = this.state.songs[this.state.currentIndex].url;
+		var fullurl = "https://assets.breatheco.de/apis/sound/" + endpoint;
+		this.player.current.src = fullurl;
+		this.player.current.pause();
+		this.player.current.load();
 		this.player.current.play();
-		// this.player.current.pause();
+	};
+	nextsong = async () => {
+		if (this.state.currentIndex < this.state.songs.length) {
+			await this.setState({ currentIndex: this.state.currentIndex + 1 });
+			this.playFunction();
+		} else {
+			await this.setState({ currentIndex: 0 });
+			this.playFunction();
+		}
+	};
+	previoussong = async () => {
+		if (this.state.currentIndex > 0) {
+			await this.setState({ currentIndex: this.state.currentIndex - 1 });
+			this.playFunction();
+		} else {
+			this.playFunction();
+		}
+	};
+	pause = () => {
+		this.player.current.pause();
 	};
 
 	render() {
-		console.log(this.state.songs);
+		// console.log(this.state.songs);
 		return (
 			<div className="text-center mt-5">
 				<ul>
-					<li>
+					{this.state.songs.map((eachsong, index) => {
+						return (
+							<li
+								className="songlist"
+								onClick={() =>
+									this.setState({ currentIndex: index })
+								}
+								key={index}>
+								{eachsong.name}
+							</li>
+						);
+					})}
+				</ul>
+				<audio ref={this.player} />
+				<ul>
+					<li className="clickers">
 						<i
 							className="fa fa-step-backward"
 							aria-hidden="true"
-							onClick={this.playFunction}
+							onClick={this.previoussong}
 						/>
 					</li>
-					<li>
+					<li className="clickers">
 						<i
 							className="fa fa-play"
 							aria-hidden="true"
 							onClick={this.playFunction}
 						/>
 					</li>
-					<li>
+					<li className="clickers">
 						<i
 							className="fa fa-pause"
 							aria-hidden="true"
-							onClick={this.playFunction}
+							onClick={this.pause}
 						/>
 					</li>
-					<li>
+					<li className="clickers">
 						<i
 							className="fa fa-step-forward"
 							aria-hidden="true"
-							onClick={this.playFunction}
+							onClick={this.nextsong}
 						/>
 					</li>
 				</ul>
-				<audio ref={this.player} />
 			</div>
 		);
 	}
